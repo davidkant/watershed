@@ -8,8 +8,8 @@ with open('LICENSE.md') as f:
 
 requirements = [
     'numpy',
-    'sklearn',
-    'skimage',
+    'scikit-learn',
+    'scikit-image',
     'scipy',
 ]
 
