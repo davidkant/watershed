@@ -1,9 +1,9 @@
-from sklearn.neighbors.kde import KernelDensity
+from sklearn.neighbors import KernelDensity
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.preprocessing import minmax_scale
 
 from skimage.feature import peak_local_max
-from skimage.morphology import watershed
+from skimage.segmentation import watershed
 from skimage.segmentation import find_boundaries
 
 from scipy import ndimage as ndi
