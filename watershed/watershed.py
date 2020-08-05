@@ -80,9 +80,12 @@ class Watershed:
         """
         if verbose:
             print('Segmenting regions using watershed...')
+            print('- num samples: {}'.format(len(Z)))
 
         # outliers
         if self.prune_outliers:
+            if verbose:
+                print('- pruning outliers')
             self.lof_ = LocalOutlierFactor(
                 n_neighbors=self.outlier_neighbors, contamination=0.1
             )
@@ -91,6 +94,8 @@ class Watershed:
             lof_scores = minmax_scale(lof_scores)
             self.Z_crop_ = Z[lof_scores > self.outlier_threshold]
             self.Z_left_ = np.where(lof_scores > self.outlier_threshold)
+            num_outliers = Z.shape[0] - self.Z_crop_.shape[0]
+            print('-> outliers pruned: {}'.format(num_outliers))
         else:
             self.Z_crop_ = Z
 
@@ -102,11 +107,15 @@ class Watershed:
         )
 
         # estimate probability density using Gaussian kernal
+        if verbose:
+            print('- performing KDE')
         self.kde_ = KernelDensity(
             kernel='gaussian', bandwidth=self.bandwidth
         ).fit(self.Z_norm_)
 
         # convert density estimate to an image of probs and normalize
+        if verbose:
+            print('- scoring KDE')
         x, y = np.meshgrid(
             np.linspace(0, 1, self.ngrid), np.linspace(0, 1, self.ngrid)
         )
@@ -117,6 +126,8 @@ class Watershed:
         self.P_ = np.exp(self.P_) / np.max(np.exp(self.P_))
 
         # find peaks
+        if verbose:
+            print('- finding peaks')
         self.peaks_ = peak_local_max(
             self.P_,
             min_distance=self.peak_min_distance,
@@ -132,15 +143,21 @@ class Watershed:
                     self.P_peaks_[(peak[0] + i, peak[1] + j)] = 0
 
         # euclidean distance transform
+        if verbose:
+            print('- computing edt')
         self.P_edt_ = ndi.distance_transform_edt(self.P_peaks_)
 
         # perform watershed on edt
+        if verbose:
+            print('- performing watershed on edt')
         markers = ndi.label(1 - self.P_peaks_)[0] # use peaks as seed markers
         self.P_labels_ = watershed(
             self.P_edt_, markers, compactness=self.compactness
         )
 
         # find boundaries
+        if verbose:
+            print('- finding boundaries')
         self.P_bounds_ = find_boundaries(self.P_labels_)
 
         # find labels for Zs
@@ -148,9 +165,6 @@ class Watershed:
         self.Z_labels_ = self.P_labels_[indices[:,1], indices[:,0]] # swap axes
 
         if verbose:
-            print('-> outliers pruned: {}'.format(
-                Z.shape[0] - self.Z_crop_.shape[0])
-            )
             print('-> num regions found: {}'.format(len(self.peaks_)))
 
         return self.Z_labels_
