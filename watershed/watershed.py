@@ -68,7 +68,7 @@ class Watershed:
         self.compactness = compactness
 
 
-    def segment(self, Z, verbose=False):
+    def segment(self, Z, verbose=True):
         """Fit the model using Z as data to be segmented.
 
         Args:
